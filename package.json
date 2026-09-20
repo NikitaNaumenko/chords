@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "oxlint",
-    "icons": "pwa-assets-generator"
+    "icons": "pwa-assets-generator",
+    "convert": "node scripts/convert.mjs"
   },
   "dependencies": {
     "@tombatossals/chords-db": "^0.5.1",
