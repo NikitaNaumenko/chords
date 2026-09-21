@@ -25,12 +25,12 @@ export function ChordLibraryPage() {
     <div className="screen">
       <div className="page">
         <h1 className="display">Аккорды</h1>
-        <div style={{ display: 'flex', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
-          <button className={`chip${root === null ? ' on' : ''}`} style={{ minHeight: 34 }} onClick={() => setRoot(null)}>
+        <div style={{ display: 'flex', gap: 6, marginTop: 14, flexWrap: 'wrap' }}>
+          <button className={`chip${root === null ? ' on' : ''}`} style={{ minHeight: 34, background: root === null ? undefined : 'var(--card)', boxShadow: root === null ? undefined : 'var(--shadow)' }} onClick={() => setRoot(null)}>
             В песнях
           </button>
           {ROOTS.map((r) => (
-            <button key={r} className={`chip${root === r ? ' on' : ''}`} style={{ minHeight: 34, padding: '0 10px', fontWeight: 700 }} onClick={() => setRoot(r)}>
+            <button key={r} className={`chip${root === r ? ' on' : ''}`} style={{ minHeight: 34, padding: '0 10px', fontWeight: 700, background: root === r ? undefined : 'var(--card)', boxShadow: root === r ? undefined : 'var(--shadow)' }} onClick={() => setRoot(r)}>
               {r}
             </button>
           ))}

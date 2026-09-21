@@ -83,21 +83,20 @@ export function SongEditPage({ isNew }: Props) {
   }
 
   return (
-    <div className="screen no-tabs" style={{ paddingTop: 'calc(var(--sat) + 8px)' }}>
-      <div className="page">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="icon-btn" onClick={back} aria-label="Назад">
-            ‹
-          </button>
-          <div className="eyebrow" style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'rgba(244,239,230,.56)' }}>
-            {isNew ? 'Новая песня' : 'Редактор'}
-          </div>
-          <button className="pill-btn accent" onClick={save} disabled={saving || !text.trim()}>
-            Сохранить
-          </button>
-        </div>
+    <div className="screen no-tabs flush">
+      <div className="navbar">
+        <button className="back-btn" onClick={back}>
+          <span className="chev">‹</span>
+          <span>Назад</span>
+        </button>
+        <div className="title">{isNew ? 'Новая песня' : 'Редактор'}</div>
+        <button className="back-btn" onClick={save} disabled={saving || !text.trim()} style={{ fontWeight: 600 }}>
+          Сохранить
+        </button>
+      </div>
+      <div className="page gutter">
         {song?.source === 'repo' && (
-          <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, margin: '12px 0 0' }}>
+          <p className="muted" style={{ fontSize: 12.5, lineHeight: 1.5, margin: '12px 0 0' }}>
             Это песня из репозитория. Правка сохранится на этом устройстве как локальная версия; чтобы обновить файл в репозитории, скопируйте текст и вставьте в <code>songs/</code>.
           </p>
         )}
@@ -109,13 +108,13 @@ export function SongEditPage({ isNew }: Props) {
             ['{c:}', '{c: ', '}'],
             ['{chorus}', '{chorus}', ''],
           ].map(([label, b, a]) => (
-            <button key={label} className="pill-btn" style={{ padding: '7px 12px', fontFamily: 'ui-monospace, Menlo, monospace', flex: 'none' }} onClick={() => insert(b, a)}>
+            <button key={label} className="pill-btn" style={{ padding: '7px 12px', fontFamily: 'ui-monospace, Menlo, monospace', flex: 'none', fontSize: 13 }} onClick={() => insert(b, a)}>
               {label}
             </button>
           ))}
           <button
             className="pill-btn"
-            style={{ padding: '7px 12px', flex: 'none' }}
+            style={{ padding: '7px 12px', flex: 'none', fontSize: 13 }}
             onClick={() => navigator.clipboard?.writeText(text).then(() => alert('Текст скопирован'))}
           >
             Копировать
@@ -143,7 +142,7 @@ export function SongEditPage({ isNew }: Props) {
             {parsed.error}
           </div>
         )}
-        <div className="song-body" style={{ padding: '12px 0 0', overflow: 'visible', flex: 'none' }}>
+        <div className="song-body" style={{ padding: '12px 0 24px', overflow: 'visible', flex: 'none' }}>
           <SongRenderer mode="classic" sections={sections} flat={flat} active={-1} onChord={() => {}} onLine={() => {}} />
         </div>
       </div>

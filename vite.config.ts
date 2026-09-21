@@ -20,8 +20,8 @@ export default defineConfig({
         display: 'standalone',
         start_url: base,
         scope: base,
-        theme_color: '#15130F',
-        background_color: '#15130F',
+        theme_color: '#F5F3EF',
+        background_color: '#F5F3EF',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

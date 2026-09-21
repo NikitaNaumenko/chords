@@ -13,17 +13,17 @@ import { useLibrary } from '../songs/library'
 const FALLBACK_CHORDS = ['Am', 'F', 'C', 'G', 'Dm', 'E7', 'Em', 'D', 'A', 'Bm', 'Cmaj7', 'Am7']
 
 const PlusIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E0AC4E" strokeWidth="1.6" strokeLinecap="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round">
     <path d="M12 5v14M5 12h14" />
   </svg>
 )
 const ImportIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E0AC4E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 4v11M7 10l5 5 5-5M5 19h14" />
   </svg>
 )
 const ListIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E0AC4E" strokeWidth="1.6" strokeLinecap="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round">
     <path d="M5 7h14M5 12h14M5 17h9" />
   </svg>
 )
@@ -68,7 +68,7 @@ export function HomePage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div className="eyebrow">{nowLabel()}</div>
-            <h1 className="display" style={{ marginTop: 8 }}>
+            <h1 className="display" style={{ marginTop: 6 }}>
               Что играем
               <br />
               сегодня?
@@ -78,25 +78,25 @@ export function HomePage() {
             className="icon-btn"
             aria-label="Меню"
             onClick={() => setMenu(true)}
-            style={{ width: 38, height: 38, marginTop: 4, background: 'rgba(224,172,78,.18)', border: '1px solid rgba(224,172,78,.3)', color: 'var(--accent)', fontWeight: 800, fontSize: 18, letterSpacing: 1 }}
+            style={{ width: 38, height: 38, marginTop: 6, background: 'var(--card)', border: '1px solid var(--line-3)', color: 'var(--accent)', fontWeight: 700, fontSize: 18, letterSpacing: 1 }}
           >
             ⋯
           </button>
         </div>
 
         {current ? (
-          <Link className="card tap" to={`/song/${encodeURIComponent(current.id)}${resumed ? '?resume=1' : ''}`} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-              <div className="avatar" style={{ width: 52, height: 52, fontSize: 22 }}>
+          <Link className="card tap" to={`/song/${encodeURIComponent(current.id)}${resumed ? '?resume=1' : ''}`} style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="avatar" style={{ width: 52, height: 52, fontSize: 21 }}>
                 {initials(current.title)}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="serif" style={{ fontSize: 20, lineHeight: 1.15 }}>
                   {current.title}
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(244,239,230,.58)', marginTop: 3 }}>{songMeta(current)}</div>
+                <div style={{ fontSize: 13, color: 'var(--fg-muted)', marginTop: 2 }}>{songMeta(current)}</div>
               </div>
-              <div style={{ width: 40, height: 40, borderRadius: 99, background: 'var(--accent)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flex: 'none' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 99, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flex: 'none' }}>
                 ▶
               </div>
             </div>
@@ -104,17 +104,17 @@ export function HomePage() {
               <div className="progress">
                 <div style={{ width: `${Math.round((currentSettings?.progress ?? 0) * 100)}%` }} />
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(244,239,230,.58)', fontWeight: 600 }}>
+              <div style={{ fontSize: 12, color: 'var(--fg-muted)', fontWeight: 500 }}>
                 {resumed ? (currentSettings?.section ?? (currentSettings?.progress ? `${Math.round(currentSettings.progress * 100)}%` : 'Продолжить')) : 'Начать'}
               </div>
             </div>
           </Link>
         ) : (
-          <div className="card" style={{ marginTop: 22 }}>
+          <div className="card" style={{ marginTop: 20 }}>
             <div className="serif" style={{ fontSize: 20, lineHeight: 1.15 }}>
               Песенник пуст
             </div>
-            <div className="muted" style={{ fontSize: 12.5, marginTop: 6, lineHeight: 1.5 }}>
+            <div className="muted" style={{ fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
               Импортируйте <code>.cho</code> из «Файлов» (iCloud Drive) или создайте песню прямо здесь.
             </div>
           </div>
@@ -141,24 +141,24 @@ export function HomePage() {
             Все аккорды
           </Link>
         </div>
-        <Link className="card sm tap" to={`/chord/${encodeURIComponent(chordOfDay)}`} style={{ marginTop: 11, display: 'flex', gap: 16, alignItems: 'center' }}>
-          <div style={{ width: 74, flex: 'none' }}>
+        <Link className="card tap" to={`/chord/${encodeURIComponent(chordOfDay)}`} style={{ marginTop: 9, display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div style={{ width: 72, flex: 'none' }}>
             <ChordDiagram position={chordLookup?.positions[0] ?? null} name={chordOfDay} />
           </div>
           <div style={{ flex: 1 }}>
             <div className="serif" style={{ fontSize: 27, lineHeight: 1 }}>
               {chordOfDay}
             </div>
-            <div style={{ fontSize: 12.5, color: 'var(--fg-60)', marginTop: 5, lineHeight: 1.45 }}>{chordDescRu(chordOfDay, chordLookup?.positions[0])}</div>
+            <div style={{ fontSize: 13, color: 'var(--fg-muted-2)', marginTop: 4, lineHeight: 1.45 }}>{chordDescRu(chordOfDay, chordLookup?.positions[0])}</div>
           </div>
         </Link>
 
         {recent.length > 0 && (
           <>
-            <div className="eyebrow" style={{ marginTop: 26 }}>
+            <div className="eyebrow" style={{ marginTop: 24 }}>
               Недавние
             </div>
-            <div className="list">
+            <div className="group">
               {recent.slice(0, 6).map((s) => (
                 <SongRow key={s.id} song={s} favorite={lib.settings[s.id]?.favorite} />
               ))}
@@ -168,10 +168,10 @@ export function HomePage() {
 
         {recent.length === 0 && lib.songs.length > 0 && (
           <>
-            <div className="eyebrow" style={{ marginTop: 26 }}>
+            <div className="eyebrow" style={{ marginTop: 24 }}>
               Песни
             </div>
-            <div className="list">
+            <div className="group">
               {lib.songs.slice(0, 6).map((s) => (
                 <SongRow key={s.id} song={s} />
               ))}

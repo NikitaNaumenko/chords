@@ -5,15 +5,18 @@ import type { SongRecord } from '../songs/types'
 interface Props {
   song: SongRecord
   to?: string
+  /** Текст справа; null — не показывать, по умолчанию тональность */
   side?: string | null
   onClick?: () => void
   favorite?: boolean
+  chevron?: boolean
 }
 
-export function SongRow({ song, to, side, onClick, favorite }: Props) {
+/** Строка сгруппированного списка (кладите внутрь .group). */
+export function SongRow({ song, to, side, onClick, favorite, chevron }: Props) {
   const inner = (
     <>
-      <div className="thumb avatar" style={{ fontSize: 14, borderRadius: 11 }}>
+      <div className="thumb avatar" style={{ fontSize: 14, borderRadius: 10 }}>
         {initials(song.title)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -26,6 +29,7 @@ export function SongRow({ song, to, side, onClick, favorite }: Props) {
         <div className="sub">{chordsSummary(song.chords)}</div>
       </div>
       {side !== null && <div className="side">{side ?? song.key ?? ''}</div>}
+      {chevron && <div className="chev">›</div>}
     </>
   )
   if (onClick) {

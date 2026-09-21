@@ -13,12 +13,17 @@ import { shareOrDownload } from '../lib/share'
 import { useLibrary } from '../songs/library'
 import { buildSections, flattenSections, uniqueChords } from '../songs/model'
 import { parseSong } from '../songs/parse'
-import { transposeSong } from '../songs/transpose'
+import { guessKey, keyAfter, transposeSong } from '../songs/transpose'
 import type { ViewMode } from '../songs/types'
 
-const MODE_LABEL: Record<ViewMode, string> = { classic: 'Песенник', karaoke: 'Караоке', track: 'Дорожка' }
 const MODES: ViewMode[] = ['classic', 'karaoke', 'track']
 const MODE_NAME: Record<ViewMode, string> = { classic: 'Классика', karaoke: 'Караоке', track: 'Дорожка' }
+
+const ExpandIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />
+  </svg>
+)
 
 export function SongPage() {
   const { id = '' } = useParams()
@@ -36,6 +41,10 @@ export function SongPage() {
   const [setlistPicker, setSetlistPicker] = useState(false)
   const [capoOpen, setCapoOpen] = useState(false)
   const [active, setActive] = useState(0)
+  // chrome — видно ли меню (шапка/полоска/пилюля); hint — подсказка после скрытия
+  const [chrome, setChrome] = useState(true)
+  const [hint, setHint] = useState(false)
+  const hintTimer = useRef(0)
   const mode: ViewMode = settings.mode ?? 'classic'
 
   useWakeLock(true)
@@ -67,6 +76,8 @@ export function SongPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  useEffect(() => () => window.clearTimeout(hintTimer.current), [])
 
   // прогресс чтения, подпись секции и активная строка
   const [progress, setProgress] = useState(0)
@@ -106,13 +117,29 @@ export function SongPage() {
     bodyRef.current?.querySelector<HTMLElement>(`[data-line="${i}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }
 
+  const hideChrome = () => {
+    window.clearTimeout(hintTimer.current)
+    setChrome(false)
+    setHint(true)
+    hintTimer.current = window.setTimeout(() => setHint(false), 2200)
+  }
+  const onBodyClick = (e: React.MouseEvent) => {
+    if (chrome) return
+    // тап по аккорду открывает шторку, а не возвращает меню
+    if ((e.target as HTMLElement).closest('.chord-btn, .kchord, .ribbon')) return
+    window.clearTimeout(hintTimer.current)
+    setChrome(true)
+    setHint(false)
+  }
+
   if (!lib.ready) return null
   if (!song || !parsed || !displayed) {
     return (
       <div className="screen no-tabs">
         <div className="page">
-          <button className="icon-btn" onClick={() => navigate('/')}>
-            ‹
+          <button className="back-btn" onClick={() => navigate('/')}>
+            <span className="chev">‹</span>
+            <span>Назад</span>
           </button>
           <div className="empty">Песня не найдена</div>
         </div>
@@ -120,7 +147,10 @@ export function SongPage() {
     )
   }
 
-  const keyLabel = parsed.key && sounding?.key ? sounding.key : settings.transpose === 0 ? '0' : settings.transpose > 0 ? `+${settings.transpose}` : `−${-settings.transpose}`
+  // тональность: из {key}, иначе угадываем по первому аккорду; если не вышло — показываем сдвиг
+  const baseKey = parsed.key ?? guessKey(parsed.song)
+  const deltaLabel = settings.transpose === 0 ? '0' : settings.transpose > 0 ? `+${settings.transpose}` : `−${-settings.transpose}`
+  const keyLabel = (baseKey && (settings.transpose === 0 ? baseKey : (sounding?.key ?? keyAfter(baseKey, settings.transpose)))) || deltaLabel
   const setlistIndex = setlist ? setlist.songIds.indexOf(id) : -1
   const goInSetlist = (d: -1 | 1) => {
     if (!setlist) return
@@ -133,7 +163,7 @@ export function SongPage() {
   }
   const fontSize = settings.fontSize
   const bumpFont = (d: number) => {
-    const base = fontSize ?? (window.innerWidth >= 700 ? 19 : 16)
+    const base = fontSize ?? (window.innerWidth >= 700 ? 20 : 17.5)
     lib.updateSettings(id, { fontSize: Math.min(30, Math.max(12, base + d)) })
   }
   const share = () => shareOrDownload(fileNameFor(song.title), song.text)
@@ -156,98 +186,142 @@ export function SongPage() {
     setMenu(false)
   }
   const activeChord = flat[active]?.chord ?? ''
+  const capoShort = settings.capo ? `каподастр ${settings.capo}` : 'без каподастра'
+  const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/book'))
+
+  const showHeader = chrome && !playing
+  const showTopBar = chrome && playing
+  const bodyClass = ['song-body', playing ? 'centered' : '', chrome ? '' : 'bare'].filter(Boolean).join(' ')
 
   return (
     <div className="song-layout">
       <div className="song-main">
-        <div className="song-head">
-          <button className="icon-btn" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))} aria-label="Назад">
-            ‹
-          </button>
-          <div className="label">{setlist ? setlist.name : MODE_LABEL[mode]}</div>
-          <button className={`icon-btn${settings.favorite ? ' active' : ''}`} onClick={() => lib.updateSettings(id, { favorite: !settings.favorite })} aria-label="В избранное" style={{ fontSize: 14 }}>
-            {settings.favorite ? '★' : '☆'}
-          </button>
-          <button className="icon-btn" onClick={() => setMenu(true)} aria-label="Ещё" style={{ fontSize: 18, fontWeight: 800, letterSpacing: 1 }}>
-            ⋯
-          </button>
-        </div>
-        <div className="page" style={{ width: '100%' }}>
-          <div className="song-title">
-            <h1>{song.title}</h1>
-            <div className="meta">
-              {song.artist && (
-                <>
-                  <span>{song.artist}</span>
-                  <span className="dot">·</span>
-                </>
-              )}
-              {parsed.tempo && (
-                <>
-                  <span>{parsed.tempo} BPM</span>
-                  <span className="dot">·</span>
-                </>
-              )}
-              <span>{pluralChords(chords.length)}</span>
-              {song.overridden && <span className="badge">изменено локально</span>}
-            </div>
-          </div>
-          <div className="song-controls">
-            <div className="stepper">
-              <button onClick={() => lib.updateSettings(id, { transpose: Math.max(-11, settings.transpose - 1) })} aria-label="Ниже на полтона">
-                −
-              </button>
-              <div className="val">{keyLabel}</div>
-              <button onClick={() => lib.updateSettings(id, { transpose: Math.min(11, settings.transpose + 1) })} aria-label="Выше на полтона">
-                +
-              </button>
-            </div>
-            <button className={`chip${settings.capo ? ' on' : ''}`} onClick={() => setCapoOpen((v) => !v)}>
-              <span>Каподастр</span>
-              <b>{settings.capo ? settings.capo : 'нет'}</b>
-            </button>
-            {(settings.transpose !== 0 || settings.capo !== 0) && (
-              <button className="chip" onClick={() => lib.updateSettings(id, { transpose: 0, capo: 0 })}>
-                Сброс
-              </button>
-            )}
-            {capoOpen && (
-              <div className="stepper" style={{ width: '100%' }}>
-                <button onClick={() => lib.updateSettings(id, { capo: Math.max(0, settings.capo - 1) })} aria-label="Капо ниже">
-                  −
+        {showHeader && (
+          <div className="song-header">
+            <div className="page">
+              <div className="song-head">
+                <button className="back-btn" onClick={goBack}>
+                  <span className="chev">‹</span>
+                  <span>{setlist ? setlist.name : 'Песни'}</span>
                 </button>
-                <div className="val" style={{ flex: 1, color: 'var(--fg)', fontWeight: 600 }}>
-                  {settings.capo ? `Капо ${settings.capo} — аппликатуры как в ${displayed.key ?? 'другой тональности'}` : 'Без каподастра'}
+                <div style={{ flex: 1 }} />
+                <button className="icon-btn plain" onClick={() => lib.updateSettings(id, { favorite: !settings.favorite })} aria-label="В избранное">
+                  {settings.favorite ? '★' : '☆'}
+                </button>
+                <button className="icon-btn" onClick={() => setMenu(true)} aria-label="Ещё" style={{ width: 30, height: 30, fontSize: 16, fontWeight: 700, letterSpacing: 1 }}>
+                  ⋯
+                </button>
+                <button className="icon-btn" onClick={hideChrome} aria-label="Скрыть меню" style={{ width: 30, height: 30 }}>
+                  <ExpandIcon />
+                </button>
+              </div>
+              <div className="song-title">
+                <h1>{song.title}</h1>
+                <div className="meta">
+                  {song.artist && (
+                    <>
+                      <span>{song.artist}</span>
+                      <span className="dot">·</span>
+                    </>
+                  )}
+                  {parsed.tempo && (
+                    <>
+                      <span>{parsed.tempo} BPM</span>
+                      <span className="dot">·</span>
+                    </>
+                  )}
+                  <span>{pluralChords(chords.length)}</span>
+                  {song.overridden && <span className="badge">изменено локально</span>}
                 </div>
-                <button onClick={() => lib.updateSettings(id, { capo: Math.min(9, settings.capo + 1) })} aria-label="Капо выше">
-                  +
+              </div>
+              <div className="song-controls">
+                <div className="stepper">
+                  <button onClick={() => lib.updateSettings(id, { transpose: Math.max(-11, settings.transpose - 1) })} aria-label="Ниже на полтона">
+                    −
+                  </button>
+                  <div className="val">{keyLabel}</div>
+                  <button onClick={() => lib.updateSettings(id, { transpose: Math.min(11, settings.transpose + 1) })} aria-label="Выше на полтона">
+                    +
+                  </button>
+                </div>
+                <button className={`chip${settings.capo ? ' on' : ''}`} onClick={() => setCapoOpen((v) => !v)}>
+                  <span>Каподастр</span>
+                  <b>{settings.capo ? settings.capo : 'нет'}</b>
                 </button>
+                {(settings.transpose !== 0 || settings.capo !== 0) && (
+                  <button className="chip" onClick={() => lib.updateSettings(id, { transpose: 0, capo: 0 })}>
+                    Сброс
+                  </button>
+                )}
+                {capoOpen && (
+                  <div className="stepper" style={{ width: '100%' }}>
+                    <button onClick={() => lib.updateSettings(id, { capo: Math.max(0, settings.capo - 1) })} aria-label="Капо ниже">
+                      −
+                    </button>
+                    <div className="val" style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>
+                      {settings.capo ? `Капо ${settings.capo} — аппликатуры как в ${displayed.key ?? 'другой тональности'}` : 'Без каподастра'}
+                    </div>
+                    <button onClick={() => lib.updateSettings(id, { capo: Math.min(9, settings.capo + 1) })} aria-label="Капо выше">
+                      +
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="segmented" style={{ margin: '0 var(--gutter) 10px' }}>
-            {MODES.map((m) => (
-              <button key={m} className={mode === m ? 'on' : ''} onClick={() => lib.updateSettings(id, { mode: m })}>
-                {MODE_NAME[m]}
-              </button>
-            ))}
-          </div>
-          {setlist && (
-            <div className="setlist-nav">
-              <button className="chip" onClick={() => goInSetlist(-1)} disabled={setlistIndex <= 0}>
-                ‹ Пред.
-              </button>
-              <div className="mid">
-                {setlistIndex + 1} / {setlist.songIds.length}
+              <div className="segmented" style={{ margin: '0 var(--gutter) 12px' }}>
+                {MODES.map((m) => (
+                  <button key={m} className={mode === m ? 'on' : ''} onClick={() => lib.updateSettings(id, { mode: m })}>
+                    {MODE_NAME[m]}
+                  </button>
+                ))}
               </div>
-              <button className="chip" onClick={() => goInSetlist(1)} disabled={setlistIndex >= setlist.songIds.length - 1}>
-                След. ›
+              {setlist && (
+                <div className="setlist-nav">
+                  <button className="chip" onClick={() => goInSetlist(-1)} disabled={setlistIndex <= 0}>
+                    ‹ Пред.
+                  </button>
+                  <div className="mid">
+                    {setlistIndex + 1} / {setlist.songIds.length}
+                  </div>
+                  <button className="chip" onClick={() => goInSetlist(1)} disabled={setlistIndex >= setlist.songIds.length - 1}>
+                    След. ›
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showTopBar && (
+          <div className="song-topbar">
+            <div className="inner">
+              <button className="icon-btn" onClick={toggle} aria-label="Пауза">
+                ❚❚
+              </button>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <div className="t">{song.title}</div>
+                <div className="m">
+                  <b>{keyLabel}</b>
+                  <span style={{ opacity: 0.5 }}>·</span>
+                  <span>{capoShort}</span>
+                </div>
+              </div>
+              <button className="speed" onClick={cycleSpeed}>
+                ×{settings.speed}
+              </button>
+              <button className="icon-btn" onClick={hideChrome} aria-label="Скрыть меню">
+                <ExpandIcon />
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div ref={bodyRef} className="song-body" onScroll={onScroll} style={fontSize ? ({ '--lyric-size': `${fontSize}px` } as React.CSSProperties) : undefined}>
+        {!chrome && (
+          <div className="song-progress-top">
+            <div style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
+        )}
+
+        <div ref={bodyRef} className={bodyClass} onScroll={onScroll} onClick={onBodyClick} style={fontSize ? ({ '--lyric-size': `${fontSize}px` } as React.CSSProperties) : undefined}>
           <div className="page">
             {mode === 'track' && (
               <div className="ribbon" style={{ marginBottom: 12 }}>
@@ -255,7 +329,7 @@ export function SongPage() {
                   const on = c === activeChord
                   return (
                     <button key={c} className={on ? 'on' : ''} onClick={() => setSheetChord(c)}>
-                      <ChordDiagram position={db ? (lookupChord(db, c)?.positions[0] ?? null) : null} name={c} dotColor={on ? 'var(--accent)' : 'var(--dot-muted)'} />
+                      <ChordDiagram position={db ? (lookupChord(db, c)?.positions[0] ?? null) : null} name={c} dotColor={on ? 'var(--accent)' : 'var(--fg-2)'} lineColor="rgba(20,17,13,.28)" />
                       <div className="name">{c}</div>
                     </button>
                   )
@@ -263,24 +337,31 @@ export function SongPage() {
               </div>
             )}
             {parsed.error && <div className="comment" style={{ marginBottom: 12, color: 'var(--danger)' }}>Не удалось полностью разобрать: {parsed.error}</div>}
-            <SongRenderer mode={mode} sections={sections} flat={flat} active={active} onChord={setSheetChord} onLine={onLine} />
+            <SongRenderer mode={mode} sections={sections} flat={flat} active={active} showLabels={!playing} onChord={setSheetChord} onLine={onLine} />
           </div>
         </div>
 
-        <div className="scroll-pill">
-          <button className={`play${playing ? ' paused' : ''}`} onClick={toggle} aria-label={playing ? 'Пауза' : 'Автопрокрутка'}>
-            {playing ? '❚❚' : '▶'}
-          </button>
-          <div className="info">
-            <span>Автопрокрутка</span>
-            <div className="progress">
-              <div style={{ width: `${Math.round(progress * 100)}%` }} />
+        {chrome && (
+          <div className="scroll-pill">
+            <button className="play" onClick={toggle} aria-label={playing ? 'Пауза' : 'Автопрокрутка'}>
+              {playing ? '❚❚' : '▶'}
+            </button>
+            <div className="info">
+              <span>{playing ? 'Играет · автопрокрутка' : 'Автопрокрутка'}</span>
+              <div className="progress">
+                <div style={{ width: `${Math.round(progress * 100)}%` }} />
+              </div>
             </div>
+            <button className="speed" onClick={cycleSpeed}>
+              ×{settings.speed}
+            </button>
           </div>
-          <button className="speed" onClick={cycleSpeed}>
-            ×{settings.speed}
-          </button>
-        </div>
+        )}
+        {hint && (
+          <div className="hint-toast">
+            <span>Тап по тексту — вернуть меню</span>
+          </div>
+        )}
       </div>
 
       <aside className="song-side">
@@ -309,13 +390,13 @@ export function SongPage() {
             <button onClick={share}>
               <span>⇪</span> Поделиться .cho
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 12, background: 'var(--surface)', fontSize: 15, fontWeight: 600 }}>
+            <div className="menu-row">
               <span>Aa</span> Размер текста
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button className="icon-btn" onClick={() => bumpFont(-1)} aria-label="Меньше">
+                <button className="icon-btn" onClick={() => bumpFont(-1)} aria-label="Меньше" style={{ background: 'var(--card)', padding: 0, fontSize: 12, fontWeight: 600 }}>
                   A−
                 </button>
-                <button className="icon-btn" onClick={() => bumpFont(1)} aria-label="Больше">
+                <button className="icon-btn" onClick={() => bumpFont(1)} aria-label="Больше" style={{ background: 'var(--card)', padding: 0, fontSize: 12, fontWeight: 600 }}>
                   A+
                 </button>
               </div>

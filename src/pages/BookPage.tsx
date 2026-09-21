@@ -35,11 +35,11 @@ export function BookPage() {
       <div className="page">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <h1 className="display">Песенник</h1>
-          <button className="icon-btn" aria-label="Меню" onClick={() => setMenu(true)} style={{ fontSize: 18, fontWeight: 800, letterSpacing: 1 }}>
+          <button className="icon-btn" aria-label="Меню" onClick={() => setMenu(true)} style={{ width: 38, height: 38, background: 'var(--card)', border: '1px solid var(--line-3)', color: 'var(--accent)', fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>
             ⋯
           </button>
         </div>
-        <div className="segmented" style={{ marginTop: 16 }}>
+        <div className="segmented" style={{ marginTop: 14 }}>
           <button className={tab === 'lists' ? 'on' : ''} onClick={() => setParams({})}>
             Сет-листы
           </button>
@@ -49,23 +49,23 @@ export function BookPage() {
         </div>
 
         {tab === 'lists' ? (
-          <div className="setlist-grid" style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="setlist-grid" style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9 }}>
             {lib.setlists.map((l) => {
               const songs = l.songIds.map((id) => lib.getSong(id)).filter((s) => s != null)
               const chords = [...new Set(songs.flatMap((s) => s.chords))]
               return (
-                <Link key={l.id} className="card sm tap" to={`/setlist/${encodeURIComponent(l.id)}`} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div className="avatar" style={{ width: 46, height: 46, borderRadius: 13, fontSize: 19, color: 'rgba(244,239,230,.4)' }}>
+                <Link key={l.id} className="card sm tap" to={`/setlist/${encodeURIComponent(l.id)}`} style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                  <div className="avatar" style={{ width: 46, height: 46, borderRadius: 12, fontSize: 19 }}>
                     {initials(l.name)[0]}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 600 }}>{l.name}</div>
-                    <div style={{ fontSize: 11.5, color: 'rgba(244,239,230,.56)', marginTop: 3 }}>
+                    <div style={{ fontSize: 16, fontWeight: 500 }}>{l.name}</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--fg-muted)', marginTop: 2 }}>
                       {pluralSongs(songs.length)}
                       {chords.length > 0 && ` · ${chordsSummary(chords, 3)}`}
                     </div>
                   </div>
-                  <div style={{ color: 'rgba(244,239,230,.52)', fontSize: 15 }}>›</div>
+                  <div style={{ color: 'var(--fg-tertiary)', fontSize: 16 }}>›</div>
                 </Link>
               )
             })}
@@ -77,13 +77,13 @@ export function BookPage() {
           <>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <div className="search" style={{ flex: 1 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(244,239,230,.5)" strokeWidth="2" strokeLinecap="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fg-tertiary)" strokeWidth="2" strokeLinecap="round">
                   <circle cx="11" cy="11" r="7" />
                   <path d="m20 20-3.5-3.5" />
                 </svg>
                 <input placeholder="Название, исполнитель или аккорд" value={query} onChange={(e) => setQuery(e.target.value)} inputMode="search" />
                 {query && (
-                  <button onClick={() => setQuery('')} style={{ color: 'var(--fg-60)' }}>
+                  <button onClick={() => setQuery('')} style={{ color: 'var(--fg-muted)' }}>
                     ✕
                   </button>
                 )}
@@ -92,12 +92,12 @@ export function BookPage() {
                 ★
               </button>
             </div>
-            <div className="list" style={{ marginTop: 8 }}>
+            <div className="group">
               {filtered.map((s) => (
                 <SongRow key={s.id} song={s} favorite={lib.settings[s.id]?.favorite} />
               ))}
-              {filtered.length === 0 && <div className="empty">{lib.songs.length ? 'Ничего не нашлось' : 'Пока нет песен. Импортируйте .cho из «Файлов» или создайте новую.'}</div>}
             </div>
+            {filtered.length === 0 && <div className="empty">{lib.songs.length ? 'Ничего не нашлось' : 'Пока нет песен. Импортируйте .cho из «Файлов» или создайте новую.'}</div>}
             <button className="card sm dashed" style={{ marginTop: 12 }} onClick={() => navigate('/new')}>
               + Новая песня
             </button>

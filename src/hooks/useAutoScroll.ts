@@ -5,8 +5,8 @@ export const BASE_SPEED = 28
 export const SPEEDS = [0.5, 0.75, 1, 1.5, 2]
 
 /**
- * Плавная автопрокрутка контейнера. Любое касание/колесо ставит на паузу.
- * Доехав до конца — останавливается.
+ * Плавная автопрокрутка контейнера. Ручная прокрутка (свайп/колесо) ставит на паузу,
+ * простой тап — нет. Доехав до конца — останавливается.
  */
 export function useAutoScroll(ref: RefObject<HTMLElement | null>, speed: number) {
   const [playing, setPlaying] = useState(false)
@@ -37,14 +37,12 @@ export function useAutoScroll(ref: RefObject<HTMLElement | null>, speed: number)
     }
     raf = requestAnimationFrame(step)
     const pause = () => setPlaying(false)
-    el.addEventListener('touchstart', pause, { passive: true })
+    el.addEventListener('touchmove', pause, { passive: true })
     el.addEventListener('wheel', pause, { passive: true })
-    el.addEventListener('pointerdown', pause, { passive: true })
     return () => {
       cancelAnimationFrame(raf)
-      el.removeEventListener('touchstart', pause)
+      el.removeEventListener('touchmove', pause)
       el.removeEventListener('wheel', pause)
-      el.removeEventListener('pointerdown', pause)
     }
   }, [playing, ref])
 

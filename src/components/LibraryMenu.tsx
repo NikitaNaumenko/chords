@@ -60,7 +60,7 @@ export function LibraryMenu({ onClose }: { onClose: () => void }) {
           <span>↺</span> Восстановить из копии
         </button>
       </div>
-      <p className="muted" style={{ fontSize: 12, marginTop: 14, lineHeight: 1.5 }}>
+      <p className="muted" style={{ fontSize: 12.5, marginTop: 14, lineHeight: 1.5 }}>
         Песни из репозитория обновляются вместе с приложением. Всё, что добавлено или изменено здесь, живёт на этом устройстве — сохраняйте копию.
       </p>
     </Sheet>

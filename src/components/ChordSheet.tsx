@@ -18,16 +18,16 @@ export function ChordSheet({ chord, onClose }: { chord: string; onClose: () => v
   return (
     <Sheet onClose={onClose}>
       <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
-        <div style={{ width: 96, flex: 'none' }}>
+        <div style={{ width: 94, flex: 'none' }}>
           <ChordDiagram position={position} name={chord} />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
           <div className="serif" style={{ fontSize: 30, lineHeight: 1 }}>
             {chord}
           </div>
-          <div style={{ fontSize: 12.5, color: 'rgba(244,239,230,.62)' }}>{db ? (found ? chordDescRu(chord, position) : 'Нет в базе аппликатур') : '…'}</div>
+          <div style={{ fontSize: 13, color: 'var(--fg-muted)' }}>{db ? (found ? chordDescRu(chord, position) : 'Нет в базе аппликатур') : '…'}</div>
           {positions.length > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--fg-60)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--fg-muted)' }}>
               <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setPos((p) => (p - 1 + positions.length) % positions.length)} aria-label="Предыдущая позиция">
                 ‹
               </button>
@@ -41,7 +41,7 @@ export function ChordSheet({ chord, onClose }: { chord: string; onClose: () => v
           )}
           <button
             className="pill-btn accent"
-            style={{ marginTop: 6, textAlign: 'center' }}
+            style={{ marginTop: 8, textAlign: 'center', borderRadius: 11 }}
             onClick={() => {
               onClose()
               navigate(`/chord/${encodeURIComponent(chord)}`)

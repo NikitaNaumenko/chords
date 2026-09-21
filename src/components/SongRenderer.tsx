@@ -6,18 +6,20 @@ interface Props {
   sections: Section[]
   flat: FlatLine[]
   active: number
+  /** Подписи секций (скрываются во время автопрокрутки) */
+  showLabels?: boolean
   onChord: (chord: string) => void
   onLine: (index: number) => void
 }
 
 /** Классика: секции, аккорд над слогом. Караоке/Дорожка: плоские строки с подсветкой активной. */
-export function SongRenderer({ mode, sections, flat, active, onChord, onLine }: Props) {
+export function SongRenderer({ mode, sections, flat, active, showLabels = true, onChord, onLine }: Props) {
   if (mode === 'classic') {
     return (
       <div className="sections">
         {sections.map((sec, si) => (
           <section key={si} className={`sec ${sec.type}`} data-section={si} data-label={sec.label ?? ''}>
-            {sec.label && <div className="eyebrow small">{sec.label}</div>}
+            {sec.label && showLabels && <div className="eyebrow small">{sec.label}</div>}
             {sec.lines.map((ln, li) => {
               if (ln.kind === 'comment') return <div key={li} className="comment">{ln.text}</div>
               if (ln.kind === 'literal') return <div key={li} className="tabline">{ln.text}</div>
@@ -49,7 +51,7 @@ export function SongRenderer({ mode, sections, flat, active, onChord, onLine }: 
       <div className="karaoke">
         {flat.map((ln, i) => (
           <div key={i} data-section={ln.sectionLabel != null ? ln.sectionIndex : undefined} data-label={ln.sectionLabel ?? ''}>
-            {ln.sectionLabel && (
+            {ln.sectionLabel && showLabels && (
               <div className="eyebrow small" style={{ padding: '18px 0 6px' }}>
                 {ln.sectionLabel}
               </div>
@@ -84,7 +86,7 @@ export function SongRenderer({ mode, sections, flat, active, onChord, onLine }: 
     <div className="track-lines">
       {flat.map((ln, i) => (
         <div key={i} data-section={ln.sectionLabel != null ? ln.sectionIndex : undefined} data-label={ln.sectionLabel ?? ''}>
-          {ln.sectionLabel && (
+          {ln.sectionLabel && showLabels && (
             <div className="eyebrow small" style={{ padding: '14px 0 4px' }}>
               {ln.sectionLabel}
             </div>

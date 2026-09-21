@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
+import { NavBar } from '../components/NavBar'
 import { Sheet } from '../components/Sheet'
 import { SongRow } from '../components/SongRow'
 import { initials, pluralSongs } from '../lib/format'
@@ -50,22 +51,24 @@ export function SetlistPage() {
   const play = () => songs[0] && navigate(`/song/${encodeURIComponent(songs[0].id)}?setlist=${encodeURIComponent(setlist.id)}`)
 
   return (
-    <div className="screen">
-      <div className="page">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="icon-btn" onClick={() => navigate(-1)} aria-label="Назад">
-            ‹
-          </button>
-          <div style={{ flex: 1 }} className="eyebrow" />
-          <button className="icon-btn" onClick={rename} aria-label="Переименовать">
-            ✎
-          </button>
-          <button className="icon-btn" onClick={del} aria-label="Удалить" style={{ color: 'var(--danger)' }}>
-            ✕
-          </button>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
-          <div className="avatar" style={{ width: 52, height: 52, fontSize: 22, color: 'rgba(244,239,230,.45)' }}>
+    <div className="screen flush">
+      <NavBar
+        back="Песенник"
+        fallback="/book"
+        right={
+          <>
+            <button className="icon-btn plain" onClick={rename} aria-label="Переименовать" style={{ fontSize: 15 }}>
+              ✎
+            </button>
+            <button className="icon-btn plain" onClick={del} aria-label="Удалить" style={{ color: 'var(--danger)', fontSize: 15 }}>
+              ✕
+            </button>
+          </>
+        }
+      />
+      <div className="page gutter">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 18 }}>
+          <div className="avatar" style={{ width: 52, height: 52, fontSize: 22 }}>
             {initials(setlist.name)[0]}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -87,9 +90,9 @@ export function SetlistPage() {
           </button>
         </div>
 
-        <div className="list" style={{ marginTop: 18 }}>
+        <div className="group" style={{ marginTop: 18 }}>
           {songs.map((s, i) => (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: i < songs.length - 1 ? '1px solid var(--line)' : undefined, paddingRight: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <SongRow song={s} to={`/song/${encodeURIComponent(s.id)}?setlist=${encodeURIComponent(setlist.id)}`} side={String(i + 1)} />
               </div>
@@ -106,8 +109,8 @@ export function SetlistPage() {
               </button>
             </div>
           ))}
-          {songs.length === 0 && <div className="empty">Список пуст — добавьте песни.</div>}
         </div>
+        {songs.length === 0 && <div className="empty">Список пуст — добавьте песни.</div>}
       </div>
 
       {adding && (
@@ -120,7 +123,7 @@ export function SetlistPage() {
           <div className="eyebrow" style={{ marginBottom: 8 }}>
             Добавить в «{setlist.name}»
           </div>
-          <div className="list" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+          <div className="group" style={{ maxHeight: '50vh', overflowY: 'auto', boxShadow: 'none', border: '1px solid var(--line-2)' }}>
             {candidates.map((s) => {
               const on = picked.has(s.id)
               return (
@@ -135,9 +138,9 @@ export function SetlistPage() {
                       return next
                     })
                   }
-                  style={on ? { background: 'rgba(224,172,78,.1)' } : undefined}
+                  style={on ? { background: 'var(--accent-soft)' } : undefined}
                 >
-                  <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${on ? 'var(--accent)' : 'rgba(244,239,230,.3)'}`, background: on ? 'var(--accent)' : 'none', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flex: 'none' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${on ? 'var(--accent)' : 'var(--fg-tertiary)'}`, background: on ? 'var(--accent)' : 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flex: 'none' }}>
                     {on ? '✓' : ''}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -147,8 +150,8 @@ export function SetlistPage() {
                 </button>
               )
             })}
-            {candidates.length === 0 && <div className="empty">Все песни уже в списке</div>}
           </div>
+          {candidates.length === 0 && <div className="empty">Все песни уже в списке</div>}
           <button className="primary-btn" style={{ marginTop: 14 }} onClick={addPicked} disabled={!picked.size}>
             Добавить {picked.size ? `(${picked.size})` : ''}
           </button>
