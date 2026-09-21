@@ -45,6 +45,7 @@ export function SongPage() {
   const [chrome, setChrome] = useState(true)
   const [hint, setHint] = useState(false)
   const hintTimer = useRef(0)
+  const lastTap = useRef(0)
   const mode: ViewMode = settings.mode ?? 'classic'
 
   useWakeLock(true)
@@ -82,12 +83,17 @@ export function SongPage() {
   // прогресс чтения, подпись секции и активная строка
   const [progress, setProgress] = useState(0)
   const saveTimer = useRef(0)
+  const lastProgressAt = useRef(0)
   const onScroll = useCallback(() => {
     const el = bodyRef.current
     if (!el) return
     const max = el.scrollHeight - el.clientHeight
     const p = max > 0 ? Math.min(1, Math.max(0, el.scrollTop / max)) : 0
-    setProgress(p)
+    const now = performance.now()
+    if (now - lastProgressAt.current > 120 || p >= 1 || p <= 0) {
+      lastProgressAt.current = now
+      setProgress(p)
+    }
     const focusY = el.scrollTop + el.clientHeight * 0.3
     let label: string | null = null
     el.querySelectorAll<HTMLElement>('[data-section]').forEach((s) => {
@@ -111,25 +117,36 @@ export function SongPage() {
 
   useEffect(() => () => window.clearTimeout(saveTimer.current), [])
 
-  const onLine = (i: number) => {
-    setActive(i)
-    stop()
-    bodyRef.current?.querySelector<HTMLElement>(`[data-line="${i}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  }
+  const onLine = useCallback(
+    (i: number) => {
+      setActive(i)
+      stop()
+      bodyRef.current?.querySelector<HTMLElement>(`[data-line="${i}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    },
+    [stop],
+  )
 
   const hideChrome = () => {
     window.clearTimeout(hintTimer.current)
     setChrome(false)
     setHint(true)
-    hintTimer.current = window.setTimeout(() => setHint(false), 2200)
+    hintTimer.current = window.setTimeout(() => setHint(false), 2600)
   }
-  const onBodyClick = (e: React.MouseEvent) => {
-    if (chrome) return
-    // тап по аккорду открывает шторку, а не возвращает меню
-    if ((e.target as HTMLElement).closest('.chord-btn, .kchord, .ribbon')) return
+  const showChrome = () => {
     window.clearTimeout(hintTimer.current)
     setChrome(true)
     setHint(false)
+  }
+  // Двойной тап по тексту прячет/возвращает меню; одиночный ничего не делает,
+  // чтобы случайное касание во время игры не выбрасывало интерфейс.
+  const onBodyClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.chord-btn, .kchord, .ribbon')) return
+    const now = performance.now()
+    const isDouble = now - lastTap.current < 320
+    lastTap.current = isDouble ? 0 : now
+    if (!isDouble) return
+    if (chrome) hideChrome()
+    else showChrome()
   }
 
   if (!lib.ready) return null
@@ -196,7 +213,7 @@ export function SongPage() {
   return (
     <div className="song-layout">
       <div className="song-main">
-        {showHeader && (
+        <div className={`collapse${showHeader ? '' : ' collapsed'}`} aria-hidden={!showHeader}>
           <div className="song-header">
             <div className="page">
               <div className="song-head">
@@ -289,9 +306,9 @@ export function SongPage() {
               )}
             </div>
           </div>
-        )}
+        </div>
 
-        {showTopBar && (
+        <div className={`collapse${showTopBar ? '' : ' collapsed'}`} aria-hidden={!showTopBar}>
           <div className="song-topbar">
             <div className="inner">
               <button className="icon-btn" onClick={toggle} aria-label="Пауза">
@@ -313,13 +330,11 @@ export function SongPage() {
               </button>
             </div>
           </div>
-        )}
+        </div>
 
-        {!chrome && (
-          <div className="song-progress-top">
-            <div style={{ width: `${Math.round(progress * 100)}%` }} />
-          </div>
-        )}
+        <div className={`song-progress-top${chrome ? '' : ' visible'}`}>
+          <div style={{ width: `${Math.round(progress * 100)}%` }} />
+        </div>
 
         <div ref={bodyRef} className={bodyClass} onScroll={onScroll} onClick={onBodyClick} style={fontSize ? ({ '--lyric-size': `${fontSize}px` } as React.CSSProperties) : undefined}>
           <div className="page">
@@ -329,7 +344,7 @@ export function SongPage() {
                   const on = c === activeChord
                   return (
                     <button key={c} className={on ? 'on' : ''} onClick={() => setSheetChord(c)}>
-                      <ChordDiagram position={db ? (lookupChord(db, c)?.positions[0] ?? null) : null} name={c} dotColor={on ? 'var(--accent)' : 'var(--fg-2)'} lineColor="rgba(20,17,13,.28)" />
+                      <ChordDiagram position={db ? (lookupChord(db, c)?.positions[0] ?? null) : null} name={c} dotColor={on ? 'var(--accent)' : 'var(--fg-2)'} />
                       <div className="name">{c}</div>
                     </button>
                   )
@@ -341,27 +356,23 @@ export function SongPage() {
           </div>
         </div>
 
-        {chrome && (
-          <div className="scroll-pill">
-            <button className="play" onClick={toggle} aria-label={playing ? 'Пауза' : 'Автопрокрутка'}>
-              {playing ? '❚❚' : '▶'}
-            </button>
-            <div className="info">
-              <span>{playing ? 'Играет · автопрокрутка' : 'Автопрокрутка'}</span>
-              <div className="progress">
-                <div style={{ width: `${Math.round(progress * 100)}%` }} />
-              </div>
+        <div className={`scroll-pill${chrome ? '' : ' hidden'}`} aria-hidden={!chrome}>
+          <button className="play" onClick={toggle} aria-label={playing ? 'Пауза' : 'Автопрокрутка'} tabIndex={chrome ? 0 : -1}>
+            {playing ? '❚❚' : '▶'}
+          </button>
+          <div className="info">
+            <span>{playing ? 'Играет · автопрокрутка' : 'Автопрокрутка'}</span>
+            <div className="progress">
+              <div style={{ width: `${Math.round(progress * 100)}%` }} />
             </div>
-            <button className="speed" onClick={cycleSpeed}>
-              ×{settings.speed}
-            </button>
           </div>
-        )}
-        {hint && (
-          <div className="hint-toast">
-            <span>Тап по тексту — вернуть меню</span>
-          </div>
-        )}
+          <button className="speed" onClick={cycleSpeed} tabIndex={chrome ? 0 : -1}>
+            ×{settings.speed}
+          </button>
+        </div>
+        <div className={`hint-toast${hint ? ' visible' : ''}`}>
+          <span>Двойной тап по тексту — вернуть меню</span>
+        </div>
       </div>
 
       <aside className="song-side">

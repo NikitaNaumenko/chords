@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { pickFiles, shareOrDownload } from '../lib/share'
+import { getTheme, setTheme, type Theme } from '../lib/theme'
 import { useLibrary } from '../songs/library'
 import type { Backup } from '../songs/types'
 import { Sheet } from './Sheet'
@@ -8,6 +10,11 @@ import { Sheet } from './Sheet'
 export function LibraryMenu({ onClose }: { onClose: () => void }) {
   const lib = useLibrary()
   const navigate = useNavigate()
+  const [theme, setThemeState] = useState<Theme>(getTheme)
+  const pickTheme = (t: Theme) => {
+    setTheme(t)
+    setThemeState(t)
+  }
 
   const importCho = async () => {
     const files = await pickFiles('.cho,.chordpro,.crd,.pro,.txt,text/plain')
@@ -59,6 +66,22 @@ export function LibraryMenu({ onClose }: { onClose: () => void }) {
         <button onClick={restore}>
           <span>↺</span> Восстановить из копии
         </button>
+      </div>
+      <div className="eyebrow" style={{ marginTop: 18, marginBottom: 8 }}>
+        Тема
+      </div>
+      <div className="segmented">
+        {(
+          [
+            ['auto', 'Как в системе'],
+            ['light', 'Светлая'],
+            ['dark', 'Тёмная'],
+          ] as [Theme, string][]
+        ).map(([t, label]) => (
+          <button key={t} className={theme === t ? 'on' : ''} onClick={() => pickTheme(t)}>
+            {label}
+          </button>
+        ))}
       </div>
       <p className="muted" style={{ fontSize: 12.5, marginTop: 14, lineHeight: 1.5 }}>
         Песни из репозитория обновляются вместе с приложением. Всё, что добавлено или изменено здесь, живёт на этом устройстве — сохраняйте копию.

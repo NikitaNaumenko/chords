@@ -96,7 +96,7 @@ export function HomePage() {
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--fg-muted)', marginTop: 2 }}>{songMeta(current)}</div>
               </div>
-              <div style={{ width: 40, height: 40, borderRadius: 99, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flex: 'none' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 99, background: 'var(--accent)', color: 'var(--on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flex: 'none' }}>
                 ▶
               </div>
             </div>

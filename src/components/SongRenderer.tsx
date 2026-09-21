@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { FlatLine, Section } from '../songs/model'
 import type { ViewMode } from '../songs/types'
 
@@ -13,7 +14,7 @@ interface Props {
 }
 
 /** Классика: секции, аккорд над слогом. Караоке/Дорожка: плоские строки с подсветкой активной. */
-export function SongRenderer({ mode, sections, flat, active, showLabels = true, onChord, onLine }: Props) {
+export const SongRenderer = memo(function SongRenderer({ mode, sections, flat, active, showLabels = true, onChord, onLine }: Props) {
   if (mode === 'classic') {
     return (
       <div className="sections">
@@ -46,62 +47,62 @@ export function SongRenderer({ mode, sections, flat, active, showLabels = true, 
     )
   }
 
-  if (mode === 'karaoke') {
-    return (
-      <div className="karaoke">
-        {flat.map((ln, i) => (
-          <div key={i} data-section={ln.sectionLabel != null ? ln.sectionIndex : undefined} data-label={ln.sectionLabel ?? ''}>
-            {ln.sectionLabel && showLabels && (
-              <div className="eyebrow small" style={{ padding: '18px 0 6px' }}>
-                {ln.sectionLabel}
-              </div>
-            )}
-            <div className={`kline${i === active ? ' on' : ''}`} data-line={i} onClick={() => onLine(i)} role="button">
-              {ln.kind === 'lyrics' ? (
-                <>
-                  <button
-                    className="kchord"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (ln.chord) onChord(ln.chord)
-                    }}
-                  >
-                    {ln.chords.length > 1 ? `${ln.chord}…` : ln.chord}
-                  </button>
-                  <div className="ktext">{ln.text}</div>
-                </>
-              ) : (
-                <div className={ln.kind === 'comment' ? 'comment' : 'tabline'} style={{ flex: 1 }}>
-                  {ln.text}
-                </div>
-              )}
+  // Караоке и Дорожка: те же секции с подписями и отступами, что и в классике,
+  // только строки плоские — по одной на строку текста, с подсветкой активной.
+  const bySection = new Map<number, { line: FlatLine; index: number }[]>()
+  flat.forEach((line, index) => {
+    const list = bySection.get(line.sectionIndex) ?? []
+    list.push({ line, index })
+    bySection.set(line.sectionIndex, list)
+  })
+
+  const renderFlat = (ln: FlatLine, i: number) => {
+    if (mode === 'karaoke') {
+      return (
+        <div key={i} className={`kline${i === active ? ' on' : ''}`} data-line={i} onClick={() => onLine(i)} role="button">
+          {ln.kind === 'lyrics' ? (
+            <>
+              <button
+                className="kchord"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (ln.chord) onChord(ln.chord)
+                }}
+              >
+                {ln.chords.length > 1 ? `${ln.chord}…` : ln.chord}
+              </button>
+              <div className="ktext">{ln.text}</div>
+            </>
+          ) : (
+            <div className={ln.kind === 'comment' ? 'comment' : 'tabline'} style={{ flex: 1 }}>
+              {ln.text}
             </div>
-          </div>
-        ))}
+          )}
+        </div>
+      )
+    }
+    if (ln.kind === 'lyrics') {
+      return (
+        <button key={i} className={`tline${i === active ? ' on' : ''}`} data-line={i} onClick={() => onLine(i)} style={{ display: 'block', width: '100%' }}>
+          {ln.text}
+        </button>
+      )
+    }
+    return (
+      <div key={i} className={ln.kind === 'comment' ? 'comment' : 'tabline'} data-line={i}>
+        {ln.text}
       </div>
     )
   }
 
   return (
-    <div className="track-lines">
-      {flat.map((ln, i) => (
-        <div key={i} data-section={ln.sectionLabel != null ? ln.sectionIndex : undefined} data-label={ln.sectionLabel ?? ''}>
-          {ln.sectionLabel && showLabels && (
-            <div className="eyebrow small" style={{ padding: '14px 0 4px' }}>
-              {ln.sectionLabel}
-            </div>
-          )}
-          {ln.kind === 'lyrics' ? (
-            <button className={`tline${i === active ? ' on' : ''}`} data-line={i} onClick={() => onLine(i)} style={{ display: 'block', width: '100%' }}>
-              {ln.text}
-            </button>
-          ) : (
-            <div className={ln.kind === 'comment' ? 'comment' : 'tabline'} data-line={i}>
-              {ln.text}
-            </div>
-          )}
-        </div>
+    <div className="sections">
+      {sections.map((sec, si) => (
+        <section key={si} className={`sec ${sec.type} ${mode === 'karaoke' ? 'karaoke' : 'track-lines'}`} data-section={si} data-label={sec.label ?? ''}>
+          {sec.label && showLabels && <div className="eyebrow small">{sec.label}</div>}
+          {(bySection.get(si) ?? []).map(({ line, index }) => renderFlat(line, index))}
+        </section>
       ))}
     </div>
   )
-}
+})

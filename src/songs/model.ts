@@ -67,7 +67,15 @@ export function buildSections(song: Song): Section[] {
       if (segs.length && segs.some((s) => s.chord || s.text.trim())) current.lines.push({ kind: 'lyrics', segs })
     }
   }
-  return sections.filter((s) => s.lines.length)
+  const result = sections.filter((s) => s.lines.length)
+  // куплеты без подписи нумеруем: «Куплет 1», «Куплет 2»…
+  let verseNo = 0
+  for (const sec of result) {
+    if (sec.type !== 'verse') continue
+    verseNo++
+    if (!sec.label) sec.label = `Куплет ${verseNo}`
+  }
+  return result
 }
 
 export function flattenSections(sections: Section[]): FlatLine[] {

@@ -18,7 +18,7 @@ const FRET_H = H / FRETS
 const DOT_R = 9.5
 
 /** Диаграмма аккорда в стилистике дизайна: сетка, кружки, баррэ; без номеров пальцев. */
-export function ChordDiagram({ position, name, showName = false, dotColor = 'var(--accent)', lineColor = 'rgba(20,17,13,.3)', className }: Props) {
+export function ChordDiagram({ position, name, showName = false, dotColor = 'var(--accent)', lineColor = 'var(--diagram-line)', className }: Props) {
   if (!position) {
     return (
       <div className={`diagram none ${className ?? ''}`}>нет диаграммы</div>
@@ -41,8 +41,8 @@ export function ChordDiagram({ position, name, showName = false, dotColor = 'var
       barreRect = { x: x(first) - DOT_R, w: (last - first) * STEP + DOT_R * 2, y: fretY(barre) - DOT_R }
     }
   }
-  const nutColor = baseFret > 1 ? 'rgba(20,17,13,.3)' : '#14110D'
-  const markColor = '#6E6A63'
+  const nutColor = baseFret > 1 ? 'var(--diagram-nut-dim)' : 'var(--diagram-nut)'
+  const markColor = 'var(--diagram-mark)'
 
   return (
     <div className={`diagram ${className ?? ''}`}>
@@ -71,7 +71,7 @@ export function ChordDiagram({ position, name, showName = false, dotColor = 'var
           <line key={`s${i}`} x1={x(i)} x2={x(i)} y1={0} y2={H} stroke={lineColor} strokeWidth={1} />
         ))}
         {Array.from({ length: FRETS }, (_, k) => (
-          <line key={`f${k}`} x1={0} x2={W} y1={(k + 1) * FRET_H} y2={(k + 1) * FRET_H} stroke="rgba(20,17,13,.16)" strokeWidth={1} />
+          <line key={`f${k}`} x1={0} x2={W} y1={(k + 1) * FRET_H} y2={(k + 1) * FRET_H} stroke="var(--diagram-fret)" strokeWidth={1} />
         ))}
         {barreRect && <rect x={barreRect.x} y={barreRect.y} width={barreRect.w} height={DOT_R * 2} rx={DOT_R} fill={dotColor} />}
         {dots.map(({ f, i }) => (

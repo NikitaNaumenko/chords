@@ -140,7 +140,7 @@ export function SetlistPage() {
                   }
                   style={on ? { background: 'var(--accent-soft)' } : undefined}
                 >
-                  <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${on ? 'var(--accent)' : 'var(--fg-tertiary)'}`, background: on ? 'var(--accent)' : 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flex: 'none' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${on ? 'var(--accent)' : 'var(--fg-tertiary)'}`, background: on ? 'var(--accent)' : 'none', color: 'var(--on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flex: 'none' }}>
                     {on ? '✓' : ''}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

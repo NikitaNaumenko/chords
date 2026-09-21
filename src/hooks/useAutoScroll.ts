@@ -5,12 +5,13 @@ export const BASE_SPEED = 28
 export const SPEEDS = [0.5, 0.75, 1, 1.5, 2]
 
 /**
- * Плавная автопрокрутка контейнера. Ручная прокрутка (свайп/колесо) ставит на паузу,
- * простой тап — нет. Доехав до конца — останавливается.
+ * Плавная автопрокрутка контейнера: позиция считается от времени, а не
+ * прибавляется целыми пикселями, поэтому на Retina движение субпиксельное.
+ * Ручная прокрутка (свайп/колесо) ставит на паузу, простой тап — нет.
+ * Доехав до конца — останавливается.
  */
 export function useAutoScroll(ref: RefObject<HTMLElement | null>, speed: number) {
   const [playing, setPlaying] = useState(false)
-  const acc = useRef(0)
   const speedRef = useRef(speed)
   speedRef.current = speed
 
@@ -18,20 +19,20 @@ export function useAutoScroll(ref: RefObject<HTMLElement | null>, speed: number)
     const el = ref.current
     if (!playing || !el) return
     let raf = 0
-    let last = performance.now()
-    acc.current = 0
+    // якорь: откуда и с какого момента считаем; переставляется при смене скорости
+    let baseTop = el.scrollTop
+    let baseTime = performance.now()
+    let baseSpeed = speedRef.current
     const step = (now: number) => {
-      const dt = Math.min(64, now - last)
-      last = now
-      acc.current += (BASE_SPEED * speedRef.current * dt) / 1000
-      const px = Math.floor(acc.current)
-      if (px >= 1) {
-        acc.current -= px
-        el.scrollTop += px
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
-          setPlaying(false)
-          return
-        }
+      if (speedRef.current !== baseSpeed) {
+        baseTop = el.scrollTop
+        baseTime = now
+        baseSpeed = speedRef.current
+      }
+      el.scrollTop = baseTop + (BASE_SPEED * baseSpeed * (now - baseTime)) / 1000
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+        setPlaying(false)
+        return
       }
       raf = requestAnimationFrame(step)
     }
@@ -47,5 +48,6 @@ export function useAutoScroll(ref: RefObject<HTMLElement | null>, speed: number)
   }, [playing, ref])
 
   const toggle = useCallback(() => setPlaying((p) => !p), [])
-  return { playing, toggle, stop: () => setPlaying(false) }
+  const stop = useCallback(() => setPlaying(false), [])
+  return { playing, toggle, stop }
 }

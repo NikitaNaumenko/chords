@@ -67,6 +67,10 @@ describe('buildSections', () => {
     expect(sections[2].lines[0]).toEqual({ kind: 'comment', text: 'проигрыш' })
     expect(uniqueChords(sections)).toEqual(['Am', 'Dm', 'E7'])
   })
+  it('нумерует куплеты без подписи', () => {
+    const sections = buildSections(parseSong('{sov}\n[Am]раз\n{eov}\n{soc}\n[E7]припев\n{eoc}\n{sov: Финал}\n[Am]два\n{eov}\n{sov}\n[Am]три\n{eov}').song)
+    expect(sections.map((s) => s.label)).toEqual(['Куплет 1', 'Припев', 'Финал', 'Куплет 3'])
+  })
   it('плоские строки для караоке', () => {
     const flat = flattenSections(buildSections(parseSong(SONG).song))
     expect(flat[0]).toMatchObject({ chord: 'Am', text: 'Ой, то не вечер, то не вечер,', sectionLabel: 'Куплет 1' })
