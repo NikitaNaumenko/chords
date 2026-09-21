@@ -115,7 +115,7 @@ export function HomePage() {
               Песенник пуст
             </div>
             <div className="muted" style={{ fontSize: 12.5, marginTop: 6, lineHeight: 1.5 }}>
-              Добавьте файлы <code>.cho</code> в папку <code>songs/</code> репозитория или создайте песню прямо здесь.
+              Импортируйте <code>.cho</code> из «Файлов» (iCloud Drive) или создайте песню прямо здесь.
             </div>
           </div>
         )}

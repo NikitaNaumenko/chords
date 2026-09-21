@@ -128,22 +128,32 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     setSetlists((prev) => prev.filter((x) => x.id !== id))
   }, [])
 
-  const importTexts = useCallback(async (items: { name: string; text: string }[]) => {
-    let n = 0
-    const added: Record<string, LocalSong> = {}
-    for (const it of items) {
-      const text = it.text.trim()
-      if (!text) continue
-      const hasTitle = /\{(title|t):/i.test(text)
-      const body = hasTitle ? text : `{title: ${it.name.replace(/\.[^.]+$/, '')}}\n${text}`
-      const rec: LocalSong = { id: newLocalId(), text: body, updatedAt: Date.now() }
-      await db.putLocalSong(rec)
-      added[rec.id] = rec
-      n++
-    }
-    setLocalSongs((prev) => ({ ...prev, ...added }))
-    return n
-  }, [])
+  // Повторный импорт того же файла обновляет песню, а не создаёт дубль:
+  // совпадение ищем по названию + исполнителю (без учёта регистра и пробелов).
+  const importTexts = useCallback(
+    async (items: { name: string; text: string }[]) => {
+      let n = 0
+      const added: Record<string, LocalSong> = {}
+      const keyOf = (title: string, artist: string | null) => `${title}\u0000${artist ?? ''}`.toLowerCase().replace(/\s+/g, ' ').trim()
+      const existing = new Map(songs.map((s) => [keyOf(s.title, s.artist), s.id]))
+      for (const it of items) {
+        const text = it.text.trim()
+        if (!text) continue
+        const fallback = it.name.replace(/\.[^.]+$/, '')
+        const hasTitle = /\{(title|t):/i.test(text)
+        const body = hasTitle ? text : `{title: ${fallback}}\n${text}`
+        const parsed = parseSong(body)
+        const id = existing.get(keyOf(titleFor(parsed, fallback), parsed.artist)) ?? newLocalId()
+        const rec: LocalSong = { id, text: body, updatedAt: Date.now() }
+        await db.putLocalSong(rec)
+        added[rec.id] = rec
+        n++
+      }
+      setLocalSongs((prev) => ({ ...prev, ...added }))
+      return n
+    },
+    [songs],
+  )
 
   const makeBackup = useCallback(
     (): Backup => ({

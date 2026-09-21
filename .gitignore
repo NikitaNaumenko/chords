@@ -24,5 +24,12 @@ dist-ssr
 *.sw?
 
 # Служебное
+.env.local
 dev-dist
 .playwright-mcp
+
+# Песни не публикуем (авторские права): .cho и входящие тексты остаются локально.
+# Чтобы всё-таки выложить конкретную песню (народную), добавьте строку «!songs/имя.cho».
+songs/*.cho
+songs/inbox/*
+!songs/inbox/README.md

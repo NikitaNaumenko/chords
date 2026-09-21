@@ -96,7 +96,7 @@ export function BookPage() {
               {filtered.map((s) => (
                 <SongRow key={s.id} song={s} favorite={lib.settings[s.id]?.favorite} />
               ))}
-              {filtered.length === 0 && <div className="empty">{lib.songs.length ? 'Ничего не нашлось' : 'Пока нет песен. Добавьте .cho в папку songs/ или создайте новую.'}</div>}
+              {filtered.length === 0 && <div className="empty">{lib.songs.length ? 'Ничего не нашлось' : 'Пока нет песен. Импортируйте .cho из «Файлов» или создайте новую.'}</div>}
             </div>
             <button className="card sm dashed" style={{ marginTop: 12 }} onClick={() => navigate('/new')}>
               + Новая песня

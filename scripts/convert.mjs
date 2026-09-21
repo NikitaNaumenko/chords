@@ -4,6 +4,8 @@
 //   pnpm convert                 # все songs/inbox/*.txt → songs/*.cho, исходники в songs/inbox/done/
 //   pnpm convert файл.txt ...    # только указанные файлы
 //   pnpm convert --dry           # показать результат, ничего не писать
+//   pnpm convert --out ДИР       # писать .cho в другую папку (например, в iCloud Drive);
+//                                # то же через переменную CHORDS_OUT в .env.local или окружении
 //
 // Имя файла «Артист - Название.txt» даёт {artist} и {title}. Заголовки секций
 // («Куплет 1:», «Припев:», «[Chorus]», «Вступление: Am F C G») превращаются в директивы.
@@ -14,7 +16,22 @@ import { Chord } from 'chordsheetjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const INBOX = join(ROOT, 'songs', 'inbox')
-const OUT = join(ROOT, 'songs')
+const DEFAULT_OUT = join(ROOT, 'songs')
+
+/** CHORDS_OUT из окружения или .env.local (файл не коммитится) */
+async function outDirFromEnv() {
+  if (process.env.CHORDS_OUT) return process.env.CHORDS_OUT
+  try {
+    const env = await readFile(join(ROOT, '.env.local'), 'utf8')
+    const m = env.match(/^\s*CHORDS_OUT\s*=\s*"?([^"\n]+)"?\s*$/m)
+    if (m) return m[1].trim()
+  } catch {
+    // нет .env.local — норм
+  }
+  return null
+}
+
+const expandHome = (p) => (p.startsWith('~/') ? join(process.env.HOME ?? '', p.slice(2)) : p)
 
 const SECTION = [
   [/^(припев|chorus|refrain)/i, 'chorus'],
@@ -176,7 +193,10 @@ function metaFromName(file) {
 async function main() {
   const args = process.argv.slice(2)
   const dry = args.includes('--dry')
-  let files = args.filter((a) => !a.startsWith('--'))
+  const outIdx = args.indexOf('--out')
+  const outArg = outIdx >= 0 ? args[outIdx + 1] : null
+  const out = resolve(expandHome(outArg ?? (await outDirFromEnv()) ?? DEFAULT_OUT))
+  let files = args.filter((a, i) => !a.startsWith('--') && !(outIdx >= 0 && i === outIdx + 1))
   if (!files.length) {
     try {
       files = (await readdir(INBOX)).filter((f) => /\.(txt|crd|tab)$/i.test(f)).map((f) => join(INBOX, f))
@@ -196,12 +216,13 @@ async function main() {
       console.log(`\n===== ${outName}\n${cho}`)
       continue
     }
-    await writeFile(join(OUT, outName), cho)
+    await mkdir(out, { recursive: true })
+    await writeFile(join(out, outName), cho)
     if (file.startsWith(INBOX)) {
       await mkdir(join(INBOX, 'done'), { recursive: true })
       await rename(file, join(INBOX, 'done', basename(file)))
     }
-    console.log(`✓ ${basename(file)} → songs/${outName}`)
+    console.log(`✓ ${basename(file)} → ${join(out, outName)}`)
   }
 }
 
